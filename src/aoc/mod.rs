@@ -1,3 +1,5 @@
+#[macro_use]
+mod macros;
 mod year2021;
 mod year2022;
 

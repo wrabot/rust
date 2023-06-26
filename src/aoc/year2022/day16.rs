@@ -1,62 +1,57 @@
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::ops::Index;
-use std::time::Instant;
 
 use crate::tools::graph::distances;
 
-pub fn part1() {
-    let all_distances = all_distances();
-    let start = Instant::now();
-    let result = max(&all_distances, &DATA.targets, DATA.start, 0, 0, 30);
-    println!("year2022 day16 part1 duration {:?}", start.elapsed());
-    assert_eq!(result, 2077)
+pub fn part1(input: &str) -> i32 {
+    let data = Data::parse(input);
+    let all_distances = all_distances(&data);
+    max(&data, &all_distances, &data.targets, data.start, 0, 0, 30)
 }
 
-pub fn part2() {
-    let all_distances = all_distances();
-    let start = Instant::now();
+pub fn part2(input: &str) -> i32 {
+    let data = Data::parse(input);
+    let all_distances = all_distances(&data);
     let mut result = 0;
-    let mut mine = Vec::with_capacity(DATA.targets.len());
-    let mut elephant = Vec::with_capacity(DATA.targets.len());
-    for i in 0..(1 << (DATA.targets.len() - 1)) {
+    let mut mine = Vec::with_capacity(data.targets.len());
+    let mut elephant = Vec::with_capacity(data.targets.len());
+    for i in 0..(1 << (data.targets.len() - 1)) {
         mine.clear();
         elephant.clear();
-        for index in 0..DATA.targets.len() {
+        for index in 0..data.targets.len() {
             if (i & (1 << index)) == 0 {
-                mine.push(DATA.targets[index])
+                mine.push(data.targets[index])
             } else {
-                elephant.push(DATA.targets[index])
+                elephant.push(data.targets[index])
             }
         }
-        if mine.len() < DATA.targets.len() / 2 || elephant.len() < DATA.targets.len() / 2 {
+        if mine.len() < data.targets.len() / 2 || elephant.len() < data.targets.len() / 2 {
             continue;
         }
-        let max = max(&all_distances, &mine, DATA.start, 0, 0, 26)
-            + max(&all_distances, &elephant, DATA.start, 0, 0, 26);
+        let max = max(&data, &all_distances, &mine, data.start, 0, 0, 26)
+            + max(&data, &all_distances, &elephant, data.start, 0, 0, 26);
         if max > result {
             result = max
         }
     }
-    println!("year2022 day16 part2 duration {:?}", start.elapsed());
-    assert_eq!(result, 2741)
+    result
 }
 
-fn all_distances() -> HashMap<usize, HashMap<usize, i32>> {
+fn all_distances(data: &Data) -> HashMap<usize, HashMap<usize, i32>> {
     let mut all_distances = HashMap::<usize, HashMap<usize, i32>>::new();
-    all_distances.insert(DATA.start, HashMap::<usize, i32>::new());
+    all_distances.insert(data.start, HashMap::<usize, i32>::new());
     distances(
-        DATA.start,
-        |id| &DATA.neighbors[id],
-        all_distances.get_mut(&DATA.start).unwrap(),
+        data.start,
+        |id| &data.neighbors[id],
+        all_distances.get_mut(&data.start).unwrap(),
     );
-    for target in &DATA.targets {
+    for target in &data.targets {
         all_distances.insert(*target, HashMap::<usize, i32>::new());
         distances(
             *target,
-            |id| &DATA.neighbors[id],
+            |id| &data.neighbors[id],
             all_distances.get_mut(&target).unwrap(),
         );
     }
@@ -64,6 +59,7 @@ fn all_distances() -> HashMap<usize, HashMap<usize, i32>> {
 }
 
 fn max(
+    data: &Data,
     all_distances: &HashMap<usize, HashMap<usize, i32>>,
     remaining: &Vec<usize>,
     current: usize,
@@ -78,10 +74,11 @@ fn max(
             let mut r = remaining.clone();
             r.remove(r.iter().position(|&x| x == *id).unwrap());
             let max = max(
+                &data,
                 all_distances,
                 &r,
                 *id,
-                release + DATA.valves[*id].rate,
+                release + data.valves[*id].rate,
                 total + release * delay,
                 time - delay,
             );
@@ -94,10 +91,6 @@ fn max(
 }
 
 // init
-
-lazy_static! {
-    static ref DATA: Data = Data::new();
-}
 
 #[derive(Debug)]
 struct Valve {
@@ -116,12 +109,12 @@ struct Data {
 }
 
 impl Data {
-    fn new() -> Self {
+    fn parse(input: &str) -> Self {
         let regex =
             Regex::new("Valve (\\w*) has flow rate=(\\d*); tunnels? leads? to valves? (.*)")
                 .unwrap();
         let valves = regex
-            .captures_iter(include_str!("day16_input.txt"))
+            .captures_iter(input)
             .enumerate()
             .map(|(id, captures)| Valve {
                 id,

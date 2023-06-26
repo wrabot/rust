@@ -1,12 +1,9 @@
-use itertools::Itertools;
-use std::time::Instant;
-
 use crate::tools::board::Board;
 use crate::tools::graph::short_path;
 use crate::tools::point::points;
+use itertools::Itertools;
 
-pub fn part1(input: &str, expected: u32) {
-    let start = Instant::now();
+pub fn part1(input: &str) -> u32 {
     let lines = input.lines().collect_vec();
     let board = Board {
         width: lines[0].len(),
@@ -16,13 +13,10 @@ pub fn part1(input: &str, expected: u32) {
             .flat_map(|&line| line.chars().map(|c| c.to_digit(10).unwrap()))
             .collect_vec(),
     };
-    let result = min_risk(board);
-    println!("year2021 day15 part1 duration {:?}", start.elapsed());
-    assert_eq!(result, expected)
+    min_risk(board)
 }
 
-pub fn part2(input: &str, expected: u32) {
-    let start = Instant::now();
+pub fn part2(input: &str) -> u32 {
     let lines = input.lines().collect_vec();
     let board = Board {
         width: lines[0].len() * 5,
@@ -38,9 +32,7 @@ pub fn part2(input: &str, expected: u32) {
             })
             .collect_vec(),
     };
-    let result = min_risk(board);
-    println!("year2021 day15 part2 duration {:?}", start.elapsed());
-    assert_eq!(result, expected)
+    min_risk(board)
 }
 
 fn min_risk(cave: Board<u32>) -> u32 {
