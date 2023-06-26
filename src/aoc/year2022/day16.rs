@@ -7,13 +7,11 @@ use crate::tools::graph::distances;
 
 pub fn part1(input: &str) -> i32 {
     let data = Data::parse(input);
-    let all_distances = all_distances(&data);
-    max(&data, &all_distances, &data.targets, data.start, 0, 0, 30)
+    max(&data, &data.targets, data.start, 0, 0, 30)
 }
 
 pub fn part2(input: &str) -> i32 {
     let data = Data::parse(input);
-    let all_distances = all_distances(&data);
     let mut result = 0;
     let mut mine = Vec::with_capacity(data.targets.len());
     let mut elephant = Vec::with_capacity(data.targets.len());
@@ -30,8 +28,8 @@ pub fn part2(input: &str) -> i32 {
         if mine.len() < data.targets.len() / 2 || elephant.len() < data.targets.len() / 2 {
             continue;
         }
-        let max = max(&data, &all_distances, &mine, data.start, 0, 0, 26)
-            + max(&data, &all_distances, &elephant, data.start, 0, 0, 26);
+        let max =
+            max(&data, &mine, data.start, 0, 0, 26) + max(&data, &elephant, data.start, 0, 0, 26);
         if max > result {
             result = max
         }
@@ -39,28 +37,8 @@ pub fn part2(input: &str) -> i32 {
     result
 }
 
-fn all_distances(data: &Data) -> HashMap<usize, HashMap<usize, i32>> {
-    let mut all_distances = HashMap::<usize, HashMap<usize, i32>>::new();
-    all_distances.insert(data.start, HashMap::<usize, i32>::new());
-    distances(
-        data.start,
-        |id| &data.neighbors[id],
-        all_distances.get_mut(&data.start).unwrap(),
-    );
-    for target in &data.targets {
-        all_distances.insert(*target, HashMap::<usize, i32>::new());
-        distances(
-            *target,
-            |id| &data.neighbors[id],
-            all_distances.get_mut(&target).unwrap(),
-        );
-    }
-    all_distances
-}
-
 fn max(
     data: &Data,
-    all_distances: &HashMap<usize, HashMap<usize, i32>>,
     remaining: &Vec<usize>,
     current: usize,
     release: i32,
@@ -69,13 +47,12 @@ fn max(
 ) -> i32 {
     let mut result = total + release * time;
     for id in remaining {
-        let delay = all_distances[&current][id] + 1;
+        let delay = data.all_distances[&current][id] + 1;
         if delay < time {
             let mut r = remaining.clone();
             r.remove(r.iter().position(|&x| x == *id).unwrap());
             let max = max(
                 &data,
-                all_distances,
                 &r,
                 *id,
                 release + data.valves[*id].rate,
@@ -104,8 +81,8 @@ struct Valve {
 struct Data {
     valves: Vec<Valve>,
     start: usize,
-    neighbors: Vec<Vec<(usize, i32)>>,
     targets: Vec<usize>,
+    all_distances: HashMap<usize, HashMap<usize, i32>>,
 }
 
 impl Data {
@@ -127,7 +104,15 @@ impl Data {
                     .collect_vec(),
             })
             .collect_vec();
+
         let start = valves.iter().position(|v| v.name == "AA").unwrap();
+
+        let targets = valves
+            .iter()
+            .filter(|v| v.rate > 0)
+            .map(|v| v.id)
+            .collect_vec();
+
         let neighbors = valves
             .iter()
             .map(|v| {
@@ -137,16 +122,27 @@ impl Data {
                     .collect_vec()
             })
             .collect_vec();
-        let targets = valves
-            .iter()
-            .filter(|v| v.rate > 0)
-            .map(|v| v.id)
-            .collect_vec();
+
+        let mut all_distances = HashMap::<usize, HashMap<usize, i32>>::new();
+        all_distances.insert(start, HashMap::<usize, i32>::new());
+        distances(
+            start,
+            |id| &neighbors[id],
+            all_distances.get_mut(&start).unwrap(),
+        );
+        for target in &targets {
+            all_distances.insert(*target, HashMap::<usize, i32>::new());
+            distances(
+                *target,
+                |id| &neighbors[id],
+                all_distances.get_mut(target).unwrap(),
+            );
+        }
         Self {
             valves,
             start,
-            neighbors,
             targets,
+            all_distances,
         }
     }
 }
