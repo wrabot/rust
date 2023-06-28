@@ -1,5 +1,3 @@
-use array_concat::*;
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point {
     pub x: i32,
@@ -34,8 +32,16 @@ pub const DIRECTIONS_DIAGONALS: [Point; 4] = [
 ];
 
 #[allow(unused)]
-pub const DIRECTIONS_8: [Point; concat_arrays_size!(DIRECTIONS_4, DIRECTIONS_DIAGONALS)] =
-    concat_arrays!(DIRECTIONS_4, DIRECTIONS_DIAGONALS);
+pub const DIRECTIONS_8: [Point; 8] = [
+    Point { x: 1, y: 0 },
+    Point { x: -1, y: 0 },
+    Point { x: 0, y: 1 },
+    Point { x: 0, y: -1 },
+    Point { x: 1, y: 1 },
+    Point { x: -1, y: 1 },
+    Point { x: 1, y: -1 },
+    Point { x: -1, y: -1 },
+];
 
 impl std::ops::Add<&Point> for &Point {
     type Output = Point;
